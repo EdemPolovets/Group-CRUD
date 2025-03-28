@@ -1,35 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { TodoApp } from './features/todos/components/TodoApp';
+import { AuthSwitcher } from './features/auth/components/AuthSwitcher';
+import { useAuth } from './core/hooks/useAuth';
+import { AuthLayout } from './shared/layouts/AuthLayout';
+import { ErrorMessage } from './shared/components/ErrorMessage';
+import { queryClient } from './core/config/query';
 
-function App() {
-  const [count, setCount] = useState(0)
+const App: React.FC = () => {
+  const { isAuthenticated, error, login, register } = useAuth();
 
+  const handleAuth = async (email: string, password: string, isSignUp: boolean, username?: string) => {
+    if (isSignUp && username) {
+      await register(email, password, username);
+    } else {
+      await login(email, password);
+    }
+  };
+
+  // Render authenticated app with React Query provider
+  if (isAuthenticated) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TodoApp />
+      </QueryClientProvider>
+    );
+  }
+
+  // Render auth screen
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <AuthLayout>
+      {error && <ErrorMessage message={error.message} />}
+      <AuthSwitcher onSubmit={handleAuth} />
+    </AuthLayout>
+  );
+};
 
-export default App
+export default App;
