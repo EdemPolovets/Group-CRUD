@@ -13,7 +13,7 @@ export class TodoService {
   }
  
   static async update(id: string, todo: Partial<Todo>): Promise<Todo> {
-    const response = await api.patch<Todo>(`/todos/${id}`, todo);
+    const response = await api.put<Todo>(`/todos/${id}`, todo);
     return response.data;
   }
  

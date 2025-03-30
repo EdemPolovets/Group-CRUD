@@ -45,7 +45,7 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete, on
     setIsEditing(false);
   }, [todo.title]);
 
-  const buttonClasses = 'px-4 py-2 text-sm font-semibold text-white rounded-md transition-all duration-200 focus:ring-2 focus:ring-offset-2 min-w-[80px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed';
+  const buttonClasses = 'px-4 h-[42px] text-base font-semibold text-white rounded-md transition-all duration-200 focus:ring-2 focus:ring-offset-2 min-w-[80px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
     <div className="p-4 flex items-center justify-between min-h-[60px] hover:bg-gray-50 transition-colors">
@@ -57,26 +57,15 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete, on
           className="w-6 h-6 text-blue-500 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
         />
         {isEditing ? (
-          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex-1 ml-4">
-            <input
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              className="w-full text-lg px-4 py-2  border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              autoFocus
-            />
-          </form>
-        ) : (
-          <span
-            className={`ml-4 text-lg text-gray-800 truncate ${todo.completed ? 'line-through text-gray-500' : ''}`}
-            onDoubleClick={() => setIsEditing(true)}
-          >
-            {todo.title}
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        {isEditing ? (
-          <>
+          <div className="flex-1 ml-4 flex gap-2">
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="flex-1">
+              <input
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="w-full text-lg px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-[42px]"
+                autoFocus
+              />
+            </form>
             <button
               onClick={handleSave}
               disabled={isLoading || !editedTitle.trim()}
@@ -91,24 +80,32 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete, on
             >
               Cancel
             </button>
-          </>
+          </div>
         ) : (
-          <>
-            <button
-              onClick={() => setIsEditing(true)}
-              className={`${buttonClasses} bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500`}
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className={`${buttonClasses} bg-red-600 hover:bg-red-700 active:bg-red-800 focus:ring-red-500`}
-            >
-              Delete
-            </button>
-          </>
+          <span
+            className={`ml-4 text-lg text-gray-800 truncate ${todo.completed ? 'line-through text-gray-500' : ''}`}
+            onDoubleClick={() => setIsEditing(true)}
+          >
+            {todo.title}
+          </span>
         )}
       </div>
+      {!isEditing && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsEditing(true)}
+            className={`${buttonClasses} bg-blue-600 hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500`}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className={`${buttonClasses} bg-red-600 hover:bg-red-700 active:bg-red-800 focus:ring-red-500`}
+          >
+            Delete
+          </button>
+        </div>
+      )}
 
       <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
         <div className="p-6">
@@ -133,4 +130,4 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete, on
       </Modal>
     </div>
   );
-}; 
+};
