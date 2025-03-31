@@ -1,5 +1,5 @@
 import express from 'express';
-import { TodoController } from '../controllers/TodoController';
+import { TodoController } from '../controllers/ToDoController';
 import { authenticate } from '../middleware/auth';
  
 /**

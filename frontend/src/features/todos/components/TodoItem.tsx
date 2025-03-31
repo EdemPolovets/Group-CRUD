@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { Todo } from '@core/api/types/todo.types';
+import { useState, useCallback } from 'react';
 import { Modal } from '@/shared/components/Modal';
+import { Todo } from '../types';
 
 interface TodoItemProps {
   todo: Todo;
@@ -9,7 +9,7 @@ interface TodoItemProps {
   onUpdate: (id: string, title: string) => void;
 }
 
-export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete, onUpdate }) => {
+export const TodoItem = ({ todo, onToggle, onDelete, onUpdate }: TodoItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(todo.title);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -106,11 +106,13 @@ export const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete, on
           </button>
         </div>
       )}
-
-      <Modal isOpen={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)}>
-        <div className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-          <p className="text-gray-600 mb-6">Are you sure you want to delete this todo?</p>
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Confirm Delete"
+      >
+        <div className="p-4">
+          <p className="text-gray-700 mb-4">Are you sure you want to delete this todo?</p>
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setShowDeleteConfirm(false)}

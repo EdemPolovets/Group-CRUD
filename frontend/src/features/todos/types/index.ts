@@ -8,7 +8,8 @@ export interface Todo extends BaseEntity {
 export type FilterType = 'all' | 'active' | 'completed';
  
 export interface TodoFormProps {
-  onAddTodo: (title: string) => void;
+  onSubmit: (title: string) => void;
+  isLoading?: boolean;
 }
  
 export interface TodoItemProps {

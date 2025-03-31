@@ -1,15 +1,8 @@
-import React, { memo } from 'react';
-import { Todo } from '@core/api/types/todo.types';
+import { memo } from 'react';
 import { TodoItem } from './TodoItem';
+import { TodoListProps } from '../types';
 
-interface TodoListProps {
-  todos: Todo[];
-  onToggle: (id: string, completed: boolean) => void;
-  onDelete: (id: string) => void;
-  onUpdate: (id: string, title: string) => void;
-}
-
-export const TodoList = memo<TodoListProps>(({ todos, onToggle, onDelete, onUpdate }) => {
+const TodoList = memo(({ todos, onToggle, onDelete, onUpdate }: TodoListProps) => {
   if (!todos?.length) {
     return (
       <div className="bg-white rounded-lg border-2 border-gray-300 p-4">
@@ -35,4 +28,8 @@ export const TodoList = memo<TodoListProps>(({ todos, onToggle, onDelete, onUpda
       </div>
     </div>
   );
-}); 
+});
+
+TodoList.displayName = 'TodoList';
+
+export { TodoList }; 

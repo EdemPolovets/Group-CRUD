@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { TodoFormProps } from '../types';
 
-interface TodoFormProps {
-  onSubmit: (title: string) => void;
-  isLoading?: boolean;
-}
-
-export const TodoForm: React.FC<TodoFormProps> = ({ onSubmit, isLoading = false }) => {
+export const TodoForm = ({ onSubmit, isLoading = false }: TodoFormProps) => {
   const [title, setTitle] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
