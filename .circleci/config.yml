@@ -1,11 +1,11 @@
 version: 2.1
-
+ 
 executors:
   node-executor:
     docker:
       - image: cimg/node:20.10
     working_directory: ~/repo
-
+ 
 jobs:
   build-frontend:
     executor: node-executor
@@ -45,7 +45,7 @@ jobs:
       - store_artifacts:
           path: frontend/dist
           destination: frontend-dist
-
+ 
   build-backend:
     executor: node-executor
     steps:
@@ -76,7 +76,7 @@ jobs:
       - store_artifacts:
           path: backend/coverage
           destination: backend-coverage
-
+ 
   build-docker:
     executor: node-executor
     steps:
@@ -86,25 +86,25 @@ jobs:
           name: Build Frontend Docker Image
           command: |
             cd frontend
-            docker build -t edenpolovets/todo-app-frontend:latest .
+            docker build -t $DOCKERHUB_USERNAME/todo-app-frontend:latest .
       - run:
           name: Build Backend Docker Image
           command: |
             cd backend
-            docker build -t edenpolovets/todo-app-backend:latest .
+            docker build -t $DOCKERHUB_USERNAME/todo-app-backend:latest .
       - run:
           name: Login to Docker Hub
           command: |
-            echo "$DOCKERHUB_PASSWORD" | docker login -u edenpolovets --password-stdin
+            echo "$DOCKERHUB_PASSWORD" | docker login -u $DOCKERHUB_USERNAME --password-stdin
       - run:
           name: Push Frontend Image
           command: |
-            docker push edenpolovets/todo-app-frontend:latest
+            docker push $DOCKERHUB_USERNAME/todo-app-frontend:latest
       - run:
           name: Push Backend Image
           command: |
-            docker push edenpolovets/todo-app-backend:latest
-
+            docker push $DOCKERHUB_USERNAME/todo-app-backend:latest
+ 
 workflows:
   version: 2
   build_and_deploy:
