@@ -25,8 +25,7 @@ jobs:
           command: npm test
 
   deploy:
-    docker:
-      - image: circleci/node:20
+    executor: node-executor
     steps:
       - checkout
       - run:
