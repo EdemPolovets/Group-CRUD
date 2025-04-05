@@ -3,48 +3,115 @@ version: 2.1
 executors:
   node-executor:
     docker:
-      - image: circleci/node:20.10
-    working_directory: ~/app
+      - image: cimg/node:20.10
+    working_directory: ~/repo
 
 jobs:
-  build:
+  build-frontend:
     executor: node-executor
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-frontend-deps-{{ checksum "frontend/package.json" }}
+            - v1-frontend-deps-
       - run:
-          name: Install Dependencies
-          command: npm install
-      - run:
-          name: Run TypeScript Build
-          command: npm run build
-      - run:
-          name: Run Migrations
-          command: npm run migrate
-      - run:
-          name: Run Tests
-          command: npm test
-
-  deploy:
-    executor: node-executor
-    steps:
-      - checkout
-      - run:
-          name: Install Dependencies
-          command: npm install
-      - run:
-          name: Build Application
-          command: npm run build
-      - run:
-          name: Deploy Application
+          name: Install Frontend Dependencies
           command: |
-            echo "Deploying application..."
-            # Add your deployment commands here, e.g., using SSH or a cloud provider CLI
+            cd frontend
+            npm ci
+      - save_cache:
+          paths:
+            - frontend/node_modules
+          key: v1-frontend-deps-{{ checksum "frontend/package.json" }}
+      - run:
+          name: Run Frontend Unit Tests
+          command: |
+            cd frontend
+            npm run test
+      - run:
+          name: Run Frontend Integration Tests
+          command: |
+            cd frontend
+            npm run test:integration
+      - run:
+          name: Build Frontend
+          command: |
+            cd frontend
+            npm run build
+      - store_artifacts:
+          path: frontend/coverage
+          destination: frontend-coverage
+      - store_artifacts:
+          path: frontend/dist
+          destination: frontend-dist
+
+  build-backend:
+    executor: node-executor
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-backend-deps-{{ checksum "backend/package.json" }}
+            - v1-backend-deps-
+      - run:
+          name: Install Backend Dependencies
+          command: |
+            cd backend
+            npm ci
+      - save_cache:
+          paths:
+            - backend/node_modules
+          key: v1-backend-deps-{{ checksum "backend/package.json" }}
+      - run:
+          name: Build Backend
+          command: |
+            cd backend
+            npm run build
+      - run:
+          name: Run Backend Tests
+          command: |
+            cd backend
+            npm test
+      - store_artifacts:
+          path: backend/coverage
+          destination: backend-coverage
+
+  build-docker:
+    executor: node-executor
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Frontend Docker Image
+          command: |
+            cd frontend
+            docker build -t edenpolovets/todo-app-frontend:latest .
+      - run:
+          name: Build Backend Docker Image
+          command: |
+            cd backend
+            docker build -t edenpolovets/todo-app-backend:latest .
+      - run:
+          name: Login to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASSWORD" | docker login -u edenpolovets --password-stdin
+      - run:
+          name: Push Frontend Image
+          command: |
+            docker push edenpolovets/todo-app-frontend:latest
+      - run:
+          name: Push Backend Image
+          command: |
+            docker push edenpolovets/todo-app-backend:latest
 
 workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - build
-      - deploy:
+      - build-frontend
+      - build-backend
+      - build-docker:
           requires:
-            - build
+            - build-frontend
+            - build-backend
