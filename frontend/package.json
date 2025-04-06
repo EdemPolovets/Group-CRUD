@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.0.0",
