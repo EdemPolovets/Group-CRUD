@@ -24,26 +24,30 @@ docker rm -f backend frontend postgres 2>/dev/null || true
 echo "Pulling latest Docker images..."
 docker pull $DOCKER_USERNAME/todo-app-frontend:latest
 docker pull $DOCKER_USERNAME/todo-app-backend:latest
-docker pull postgres:16
+docker pull postgres:15
 
 # Create a network for the containers if it doesn't exist
 echo "Setting up Docker network..."
 docker network create app-network 2>/dev/null || true
 
-# Setup volume for PostgreSQL data - RECREATE IT to resolve corruption issues
-echo "Recreating PostgreSQL volume to ensure clean state..."
-docker volume rm postgres_data 2>/dev/null || true
+# More aggressive volume cleanup
+echo "Forcefully removing PostgreSQL data volume..."
+docker volume rm -f postgres_data
 docker volume create postgres_data
 
-# Start PostgreSQL container with minimal configuration
-echo "Starting PostgreSQL database container..."
+# Start PostgreSQL container with volume
 docker run -d --name postgres \
   --network app-network \
   -e POSTGRES_USER=$DB_USER \
   -e POSTGRES_PASSWORD=$DB_PASSWORD \
   -e POSTGRES_DB=$DB_NAME \
   -v postgres_data:/var/lib/postgresql/data \
-  postgres:16
+  postgres:15
+
+# Check container logs immediately after starting
+echo "PostgreSQL container startup logs:"
+sleep 2
+docker logs postgres
 
 # Check if container is running and print logs if it fails to stay running
 echo "Checking if PostgreSQL container started successfully..."
@@ -59,12 +63,13 @@ if ! docker ps | grep -q postgres; then
     -e POSTGRES_USER=$DB_USER \
     -e POSTGRES_PASSWORD=$DB_PASSWORD \
     -e POSTGRES_DB=$DB_NAME \
-    postgres:16
+    -v postgres_data:/var/lib/postgresql/data \
+    postgres:15
 fi
 
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL to start..."
-MAX_RETRIES=30
+MAX_RETRIES=10
 RETRY_INTERVAL=2
 
 for i in $(seq 1 $MAX_RETRIES); do
