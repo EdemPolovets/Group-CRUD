@@ -3,6 +3,10 @@
 DOCKER_USERNAME=${DOCKERHUB_USERNAME:-edenpolovets}
 echo "Starting deployment with images from $DOCKER_USERNAME..."
 
+# Clean up disk space
+echo "Cleaning up disk space..."
+docker system prune -af --volumes
+
 # Stop and remove existing containers
 echo "Stopping and removing existing containers..."
 docker stop frontend-container backend-container db-container || true
@@ -60,13 +64,11 @@ CREATE TABLE IF NOT EXISTS todos (
 echo "Starting backend container..."
 docker run -d --name backend-container \
   --network todo-app-network \
-  -p 8443:4000 \
+  -p 4000:4000 \
   -e JWT_SECRET=NCI-2025 \
   -e NODE_ENV=production \
   -e FRONTEND_URL=http://ec2-13-218-172-249.compute-1.amazonaws.com:8080 \
   -e DATABASE_URL=postgresql://postgres:postgres@db-container:5432/todo_app \
-  -v $(pwd)/privatekey.pem:/app/privatekey.pem \
-  -v $(pwd)/server.crt:/app/server.crt \
   $DOCKER_USERNAME/todo-app-backend:latest
 
 # Run frontend container
@@ -74,16 +76,16 @@ echo "Starting frontend container..."
 docker run -d --name frontend-container \
   --network todo-app-network \
   -p 8080:80 \
-  -e VITE_API_URL=http://ec2-13-218-172-249.compute-1.amazonaws.com:8443/api \
+  -e VITE_API_URL=http://ec2-13-218-172-249.compute-1.amazonaws.com:4000/api \
   $DOCKER_USERNAME/todo-app-frontend:latest
 
 echo "Deployment completed successfully!"
 echo "Frontend available at: http://ec2-13-218-172-249.compute-1.amazonaws.com:8080"
-echo "Backend API available at: http://ec2-13-218-172-249.compute-1.amazonaws.com:8443"
+echo "Backend API available at: http://ec2-13-218-172-249.compute-1.amazonaws.com:4000"
 
 # Display container status
 docker ps
 
 # Check for errors in the backend logs
 echo "Backend logs:"
-docker logs backend-container --tail 20
+docker logs backend-container
