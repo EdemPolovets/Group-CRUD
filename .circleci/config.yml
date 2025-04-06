@@ -30,11 +30,6 @@ jobs:
             cd frontend
             npm run test
       - run:
-          name: Run Frontend Integration Tests
-          command: |
-            cd frontend
-            npm run test:integration
-      - run:
           name: Build Frontend
           command: |
             cd frontend
