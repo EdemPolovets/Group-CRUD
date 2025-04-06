@@ -8,8 +8,6 @@ on:
 
 env:
   NODE_VERSION: '20.x'
-  DOCKER_FRONTEND_IMAGE: edenpolovets/todo-app-frontend
-  DOCKER_BACKEND_IMAGE: edenpolovets/todo-app-backend
 
 jobs:
   frontend-build:
@@ -115,14 +113,14 @@ jobs:
         with:
           context: frontend
           push: true
-          tags: ${{ env.DOCKER_FRONTEND_IMAGE }}:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/todo-app-frontend:latest
 
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
           context: backend
           push: true
-          tags: ${{ env.DOCKER_BACKEND_IMAGE }}:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/todo-app-backend:latest
 
   notify:
     name: Notification
@@ -133,4 +131,4 @@ jobs:
     steps:
       - name: Check Build Status
         if: ${{ needs.docker.result != 'success' }}
-        run: exit 1 
+        run: exit 1
