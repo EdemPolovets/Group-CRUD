@@ -116,7 +116,6 @@ jobs:
           name: Deploy to EC2
           command: |
             scp ./deploy.sh deployer@${EC2_HOST}:~/deploy.sh
-            scp ./docker-compose.prod.yml deployer@${EC2_HOST}:~/docker-compose.prod.yml
             scp ./backend/src/db/migration/init.sql deployer@${EC2_HOST}:~/init.sql
             ssh deployer@${EC2_HOST} "chmod +x ~/deploy.sh && DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} ~/deploy.sh"
  
