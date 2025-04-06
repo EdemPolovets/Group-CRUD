@@ -22,7 +22,7 @@ services:
         condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/todo_app
-      - JWT_SECRET=your_jwt_secret
+      - JWT_SECRET=NCI-2025
       - NODE_ENV=production
       - FRONTEND_URL=http://ec2-13-218-172-249.compute-1.amazonaws.com:8080
     networks:
