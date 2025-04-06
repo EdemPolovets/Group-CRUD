@@ -10,7 +10,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'http://localhost:4000',
+        url: 'http://ec2-13-218-172-249.compute-1.amazonaws.com:4000/api',
         description: 'Development server',
       },
     ],
