@@ -26,7 +26,7 @@ export const TodoForm = ({ onSubmit, isLoading = false }: TodoFormProps) => {
         <button
           type="submit"
           disabled={isLoading || !title.trim()}
-          className="px-4 h-[42px] text-base font-semibold bg-green-600 text-white rounded-md transition-all duration-200 hover:bg-green-700 active:bg-green-800 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 min-w-[100px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
+          className="px-4 h-[42px] text-base font-semibold bg-yellow-500 text-white rounded-md transition-all duration-200 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2 min-w-[100px] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-yellow-500"
         >
           {isLoading ? 'Adding...' : 'Add Todo'}
         </button>
