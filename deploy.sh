@@ -30,11 +30,12 @@ docker pull postgres:16
 echo "Setting up Docker network..."
 docker network create app-network 2>/dev/null || true
 
-# Setup volume for PostgreSQL data
-echo "Creating PostgreSQL volume if it doesn't exist..."
-docker volume create postgres_data 2>/dev/null || true
+# Setup volume for PostgreSQL data - RECREATE IT to resolve corruption issues
+echo "Recreating PostgreSQL volume to ensure clean state..."
+docker volume rm postgres_data 2>/dev/null || true
+docker volume create postgres_data
 
-# Start PostgreSQL container
+# Start PostgreSQL container with minimal configuration
 echo "Starting PostgreSQL database container..."
 docker run -d --name postgres \
   --network app-network \
@@ -44,6 +45,23 @@ docker run -d --name postgres \
   -v postgres_data:/var/lib/postgresql/data \
   postgres:16
 
+# Check if container is running and print logs if it fails to stay running
+echo "Checking if PostgreSQL container started successfully..."
+sleep 3
+if ! docker ps | grep -q postgres; then
+  echo "ERROR: PostgreSQL container failed to start. Container logs:"
+  docker logs postgres
+  echo "Trying a different approach with explicit data permissions..."
+  
+  # Try with explicit data directory permissions
+  docker run -d --name postgres \
+    --network app-network \
+    -e POSTGRES_USER=$DB_USER \
+    -e POSTGRES_PASSWORD=$DB_PASSWORD \
+    -e POSTGRES_DB=$DB_NAME \
+    postgres:16
+fi
+
 # Wait for PostgreSQL to be ready
 echo "Waiting for PostgreSQL to start..."
 MAX_RETRIES=30
@@ -51,13 +69,22 @@ RETRY_INTERVAL=2
 
 for i in $(seq 1 $MAX_RETRIES); do
     echo "Attempt $i of $MAX_RETRIES..."
-    if docker exec postgres pg_isready -U $DB_USER; then
+    if docker exec postgres pg_isready -U $DB_USER 2>/dev/null; then
         echo "PostgreSQL is ready!"
         break
     fi
 
+    # Check if container is still running
+    if ! docker ps | grep -q postgres; then
+        echo "ERROR: PostgreSQL container stopped running. Container logs:"
+        docker logs postgres
+        echo "Exiting deployment due to database failure."
+        exit 1
+    fi
+
     if [ $i -eq $MAX_RETRIES ]; then
         echo "Error: Could not connect to PostgreSQL after $MAX_RETRIES attempts"
+        docker logs postgres
         exit 1
     fi
 
