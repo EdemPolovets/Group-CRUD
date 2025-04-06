@@ -40,36 +40,79 @@ docker run -d --name db-container \
 echo "Waiting for PostgreSQL to start..."
 sleep 10
 
-# Create database tables
-echo "Creating database tables..."
-docker exec db-container psql -U postgres -d todo_app -c "
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(100) UNIQUE NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS todos (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  completed BOOLEAN DEFAULT FALSE,
-  user_id INTEGER REFERENCES users(id),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-"
-
-# Run backend container
+# Start backend container (we need it first to access the migration file)
 echo "Starting backend container..."
 docker run -d --name backend-container \
   --network todo-app-network \
   -p 4000:4000 \
   -e JWT_SECRET=NCI-2025 \
   -e NODE_ENV=production \
+  -e DEBUG=express:* \
   -e FRONTEND_URL=http://ec2-13-218-172-249.compute-1.amazonaws.com:8080 \
   -e DATABASE_URL=postgresql://postgres:postgres@db-container:5432/todo_app \
   $DOCKER_USERNAME/todo-app-backend:latest
+
+# Wait for backend to start and provide migration file
+echo "Waiting for backend to start..."
+sleep 5
+
+# Copy and execute the init.sql file directly from the backend container
+echo "Running migrations from the backend container..."
+docker cp backend-container:/app/dist/db/migration/init.sql /tmp/init.sql || echo "Migration file not found in expected location!"
+if [ -f "/tmp/init.sql" ]; then
+  docker cp /tmp/init.sql db-container:/tmp/init.sql
+  docker exec db-container psql -U postgres -d todo_app -f /tmp/init.sql
+  echo "Migration completed successfully."
+else
+  echo "WARNING: Could not find migration file. Using fallback migration."
+  # Use the same migration SQL content as in your init.sql
+  cat > /tmp/init.sql << 'SQL_EOF'
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create users table if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'users') THEN
+        CREATE TABLE users (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            username VARCHAR(255) NOT NULL UNIQUE,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+    END IF;
+END $$;
+
+-- Create todos table if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'todos') THEN
+        CREATE TABLE todos (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            title VARCHAR(255) NOT NULL,
+            completed BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
+        );
+    END IF;
+END $$;
+
+-- Create index if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes 
+        WHERE indexname = 'idx_todos_user_id'
+    ) THEN
+        CREATE INDEX idx_todos_user_id ON todos(user_id);
+    END IF;
+END $$;
+SQL_EOF
+  docker cp /tmp/init.sql db-container:/tmp/init.sql
+  docker exec db-container psql -U postgres -d todo_app -f /tmp/init.sql
+  echo "Fallback migration completed."
+fi
 
 # Run frontend container
 echo "Starting frontend container..."
