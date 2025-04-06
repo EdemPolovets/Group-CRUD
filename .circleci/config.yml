@@ -99,6 +99,24 @@ jobs:
           name: Push Backend Image
           command: |
             docker push $DOCKERHUB_USERNAME/todo-app-backend:latest
+            
+  deploy:
+    executor: node-executor
+    steps:
+      - checkout
+      - run:
+          name: Add EC2 to known hosts
+          command: |
+            mkdir -p ~/.ssh
+            echo 'StrictHostKeyChecking no' >> ~/.ssh/config
+      - add_ssh_keys:
+          fingerprints:
+            - "SHA256:hZfRb+6EfZ1J93xgErWlImbseOZiwUUiDo2mdLXpkP0"
+      - run:
+          name: Deploy to EC2
+          command: |
+            scp ./deploy.sh deployer@${EC2_HOST}:~/deploy.sh
+            ssh deployer@${EC2_HOST} "chmod +x ~/deploy.sh && DOCKERHUB_USERNAME=${DOCKERHUB_USERNAME} ~/deploy.sh"
  
 workflows:
   version: 2
@@ -110,3 +128,6 @@ workflows:
           requires:
             - build-frontend
             - build-backend
+      - deploy:
+          requires:
+            - build-docker
