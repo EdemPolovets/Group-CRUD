@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
  
 const api: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://ec2-13-218-172-249.compute-1.amazonaws.com:8443/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://ec2-13-218-172-249.compute-1.amazonaws.com:4000/api',
   headers: {
     'Content-Type': 'application/json',
   },
