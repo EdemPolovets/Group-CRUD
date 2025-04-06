@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: edenpolovets/todo-app-frontend:latest
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://${EC2_PUBLIC_IP}:4000/api
+    restart: always
+    depends_on:
+      - backend
+
+  backend:
+    image: edenpolovets/todo-app-backend:latest
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - DB_USER=${DB_USER}
+      - DB_HOST=postgres
+      - DB_NAME=${DB_NAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=5432
+      - FRONTEND_URL=http://${EC2_PUBLIC_IP}
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data: 
