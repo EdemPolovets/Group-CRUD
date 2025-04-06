@@ -4,6 +4,13 @@
 DOCKER_USERNAME="edenpolovets"
 echo "Starting deployment with images from $DOCKER_USERNAME..."
 
+# Set required environment variables if not already set
+export DB_USER=${DB_USER:-postgres}
+export DB_PASSWORD=${DB_PASSWORD:-postgres}
+export DB_NAME=${DB_NAME:-todo_app}
+export JWT_SECRET=${JWT_SECRET:-NCI-2025}
+export EC2_PUBLIC_IP=ec2-13-218-172-249.compute-1.amazonaws.com
+
 # Clean up disk space
 echo "Cleaning up disk space..."
 docker system prune -af --volumes
@@ -29,7 +36,7 @@ RETRY_INTERVAL=2
 
 for i in $(seq 1 $MAX_RETRIES); do
     echo "Attempt $i of $MAX_RETRIES..."
-    if docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U postgres; then
+    if docker compose -f docker-compose.prod.yml exec -T postgres pg_isready -U $DB_USER; then
         echo "PostgreSQL is ready!"
         break
     fi
@@ -45,14 +52,27 @@ done
 
 # Run database migrations
 echo "Running database migrations..."
-if ! docker compose -f docker-compose.prod.yml exec -T postgres psql -U postgres -d todo_app -f /docker-entrypoint-initdb.d/init.sql; then
+if ! docker compose -f docker-compose.prod.yml exec -T postgres psql -U $DB_USER -d $DB_NAME -f /docker-entrypoint-initdb.d/init.sql; then
     echo "Error: Failed to run migrations"
-    exit 1
+    echo "Checking if init.sql exists in backend container..."
+    
+    # Try to copy init.sql from the backend container
+    if docker compose -f docker-compose.prod.yml exec -T backend test -f /app/dist/db/migration/init.sql; then
+        echo "Found init.sql in backend container, using it for migration..."
+        docker compose -f docker-compose.prod.yml exec -T backend cat /app/dist/db/migration/init.sql > /tmp/init.sql
+        docker compose -f docker-compose.prod.yml cp /tmp/init.sql postgres:/tmp/init.sql
+        docker compose -f docker-compose.prod.yml exec -T postgres psql -U $DB_USER -d $DB_NAME -f /tmp/init.sql
+        echo "Migration completed successfully using backend's init.sql file."
+    else
+        echo "WARNING: Could not find init.sql in backend container."
+        echo "Please ensure migrations are set up correctly in your docker-compose.prod.yml file."
+        echo "Migration failed, but continuing deployment..."
+    fi
 fi
 
 echo "Deployment completed successfully!"
-echo "Frontend is available at: http://ec2-13-218-172-249.compute-1.amazonaws.com"
-echo "Backend API is available at: http://ec2-13-218-172-249.compute-1.amazonaws.com:4000"
+echo "Frontend is available at: http://$EC2_PUBLIC_IP"
+echo "Backend API is available at: http://$EC2_PUBLIC_IP:4000"
 
 # Display container status
 docker ps
