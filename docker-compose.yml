@@ -1,11 +1,8 @@
 services:
   frontend:
-    build:
-      context: ./frontend
+    image: edenpolovets/todo-app-frontend:latest
     ports:
-      - "3000:80"
-    depends_on:
-      - backend
+      - "8080:80"
     environment:
       - VITE_API_URL=http://ec2-13-218-172-249.compute-1.amazonaws.com:4000/api
     networks:
@@ -13,13 +10,9 @@ services:
     restart: unless-stopped
 
   backend:
-    build:
-      context: ./backend
+    image: edenpolovets/todo-app-backend:latest
     ports:
       - "4000:4000"
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/todo_app
       - JWT_SECRET=NCI-2025
