@@ -6,7 +6,7 @@ const TodoList = memo(({ todos, onToggle, onDelete, onUpdate }: TodoListProps) =
   if (!todos?.length) {
     return (
       <div className="bg-white rounded-lg border-2 border-gray-300 p-4">
-        <div className="p-8 text-center text-gray-500">
+        <div className="p-4 text-center text-gray-600">
           No todos yet. Add one above!
         </div>
       </div>
