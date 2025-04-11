@@ -1,10 +1,10 @@
 # Build stage
-FROM node:20-slim AS builder
+FROM node:20-slim as builder
 
 # Set working directory
 WORKDIR /app
 
-# Install build dependencies and clean up in the same layer
+# Install build dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
@@ -24,21 +24,17 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install only the necessary runtime dependencies
+# Install build dependencies needed for bcrypt
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
-    && npm install bcrypt --build-from-source \
-    && apt-get remove -y python3 make g++ \
-    && apt-get autoremove -y \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only the necessary files from builder
+# Copy built files and dependencies
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules/bcrypt ./node_modules/bcrypt
+COPY --from=builder /app/node_modules ./node_modules
 
 # Install only production dependencies
 RUN npm install --only=production
